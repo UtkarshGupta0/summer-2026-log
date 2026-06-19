@@ -203,3 +203,5 @@ for iter in range(max_iters):
 
 context = torch.zeros((1,1) , dtype=torch.long , device = device)
 print(decode(m.generate(context, max_new_tokens=700)[0].tolist()))
+
+#final loss : 1.4919
