@@ -1,16 +1,20 @@
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+from torch.nn.functional import dropout
 
 #HYPERPARAMETERS----------------------------------------------
-batch_size = 32
-block_size = 8
+batch_size = 64
+block_size = 256
 max_iters = 5000
 eval_interval = 500
-learning_rate= 1e-3
+learning_rate= 3e-4
 device = 'cuda'if torch.cuda.is_available() else 'cpu'
 eval_iters = 200
-n_embd = 32
+n_embd = 384
+n_head = 6
+n_layers = 6
+dropout = 0.2
 # --------------------------------------------------------------
 
 torch.manual_seed(1337)
@@ -72,6 +76,7 @@ class Head(nn.Module):
         self.query = nn.Linear(n_embd, head_size, bias = False)
         self.value = nn.Linear(n_embd, head_size, bias = False)
         self.register_buffer('tril' , torch.tril(torch.ones(block_size , block_size)))
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self ,x):
         B,T,C = x.shape
@@ -81,7 +86,7 @@ class Head(nn.Module):
         wei = q @ k.transpose(-2,-1) * C**-0.5
         wei = wei.masked_fill(self.tril[:T , :T] == 0 , float('-inf'))
         wei = F.softmax(wei , dim = -1)
-
+        wei = self.dropout(wei)
         v = self.value(x)
         out = wei @ v
         return out
@@ -94,6 +99,7 @@ class MultiHeadAttention(nn.Module):
         super().__init__()
         self.heads = nn.ModuleList([Head(head_size) for _ in range(num_heads)])
         self.proj = nn.Linear(num_heads * head_size, n_embd)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self ,x):
         out = torch.cat([head(x) for head in self.heads], dim = -1)
@@ -110,6 +116,7 @@ class FeedForward(nn.Module):
             nn.Linear(n_embd , 4*n_embd ),
             nn.ReLU(),
             nn.Linear(4*n_embd , n_embd),
+            nn.Dropout(dropout),
         )
 
     def forward(self, x):
@@ -132,6 +139,7 @@ class Block(nn.Module):
         x = x + self.ffwd(self.ln2(x))
         return x
 
+#----------------------------------------------------------------
 
 class BigramLanguageModel(nn.Module):
 
@@ -139,12 +147,8 @@ class BigramLanguageModel(nn.Module):
         super().__init__()
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
-        self.blocks = nn.Sequential(
-            Block(n_embd , n_head=4),
-            Block(n_embd , n_head=4),
-            Block(n_embd , n_head=4),
-            nn.Layernorm(n_embd),
-        )
+        self.blocks = nn.Sequential(*[Block(n_embd, n_head = n_head) for _ in range(n_layers)])
+        self.ln_f = nn.LayerNorm(n_embd)
         self.lm_head = nn.Linear(n_embd, vocab_size)
 
     def forward(self, idx, targets=None):
