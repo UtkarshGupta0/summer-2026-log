@@ -54,7 +54,7 @@ def train(mode, epochs=3, lr=None, subset_size=None, r=8, alpha=16, target_modul
                   peak_mem_mb=peak_mem_mb, train_time_s=train_time, val_accuracy=acc)
     log_result(result, log_path)
     if mode == "lora":
-        torch.save(model.state_dict(), "results/lora_checkpoint.pt")
+        torch.save(model.state_dict(), "results/lora_checkpoint_r{r}_{modules_tag}.pt")
     return model, result
 
 

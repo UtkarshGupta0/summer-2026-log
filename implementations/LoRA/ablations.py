@@ -18,3 +18,7 @@ rank_by_config = {
 for name, modules in configs.items():
     r = rank_by_config[name]
     train("lora", epochs=3, subset_size=20000, r=r, alpha=2*r, target_modules=modules)
+
+for r in [1, 2, 4, 8, 16, 32]:
+    train("lora", epochs=3, subset_size=20000, r=r, alpha=2*r,
+          target_modules=("q_lin", "v_lin"))
