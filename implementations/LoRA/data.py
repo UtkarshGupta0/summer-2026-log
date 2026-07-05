@@ -1,7 +1,7 @@
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
-def get_dataloaders(batch_size=32, subset_size=5000):
+def get_dataloaders(batch_size=32, subset_size=None):
     ds = load_dataset("nyu-mll/glue", "sst2")
     tok = AutoTokenizer.from_pretrained("distilbert-base-uncased")
 
