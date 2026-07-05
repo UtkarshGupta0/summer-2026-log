@@ -1,15 +1,7 @@
-import time
-def bench(model, batch, n=50):
-    torch.cuda.synchronize()
-    t0 = time.time()
-    with torch.no_grad():
-        for _ in range(n): model(**batch)
-    torch.cuda.synchronize()
-    return (time.time() - t0) / n
-
 import torch
 from train import build_model
 from data import get_dataloaders
+from lora import merge_lora
 
 def verify_merge():
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -24,9 +16,7 @@ def verify_merge():
     with torch.no_grad():
         logits_before = model(**batch).logits.clone()
 
-    for module in model.modules():
-        if hasattr(module, "merge"):
-            module.merge()
+    merge_lora(model)
 
     with torch.no_grad():
         logits_after = model(**batch).logits

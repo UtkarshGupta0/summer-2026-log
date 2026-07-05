@@ -43,3 +43,11 @@ def count_trainable_params(model):
 def freeze_all_but_lora_and_head(model):
     for n, p in model.named_parameters():
         p.requires_grad = ("A" in n or "B" in n or "classifier" in n or "pre_classifier" in n)
+
+def merge_lora(model):
+    for name, module in model.named_modules():
+        for child_name, child in list(module.named_children()):
+            if isinstance(child, LoRALinear):
+                merged_linear = child.merge()
+                setattr(module, child_name, merged_linear)
+    return model
