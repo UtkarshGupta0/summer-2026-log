@@ -16,9 +16,6 @@ def verify_merge():
     model = build_model("lora", r=8, alpha=16).to(device)
     model.load_state_dict(torch.load("results/lora_checkpoint.pt", map_location=device))
     model.eval()
-    model, _ = None, None
-    model = build_model("lora", r=8, alpha=16).to(device)
-    model.eval()
 
     _, val_dl = get_dataloaders()
     batch = next(iter(val_dl))
